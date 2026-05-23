@@ -1,0 +1,1 @@
+export { opensearch } from './opensearch';

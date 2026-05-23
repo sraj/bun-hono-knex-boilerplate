@@ -1,0 +1,48 @@
+{
+  "name": "bun-hono-knex-boilerplate",
+  "version": "1.0.0",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "postinstall": "bun run build",
+    "start": "bun run build && bun run ./dist/src/index.js",
+    "start:prod": "bun run ./dist/src/index.js",
+    "dev": "bun --watch ./src/index.ts",
+    "debug": "bun --inspect-wait ./src/index.ts",
+    "db:migrate": "bun ./src/infra/db/migrate.ts",
+"db:seed": "bun ./src/infra/db/seed.ts",
+    "lint": "biome lint --write ./src ./scripts ./tests && eslint --fix ./src ./scripts ./tests",
+    "format": "biome format --write ./src ./scripts ./tests",
+    "check": "biome check ./src ./scripts ./tests && eslint ./src ./scripts ./tests",
+    "ci": "biome ci ./src ./scripts ./tests && eslint ./src ./scripts ./tests",
+    "openapi": "bun ./scripts/generate-openapi.ts",
+    "test": "bun test ./src ./tests",
+    "test:coverage": "bun test ./src ./tests --coverage"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@faker-js/faker": "^9.6.0",
+    "@types/bun": "latest",
+    "@types/node": "^22.15.21",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.4",
+    "eslint": "^10.4.0",
+    "eslint-plugin-import-x": "^4.16.2",
+    "swagger-jsdoc": "^6.2.8",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.59.4"
+  },
+  "dependencies": {
+    "@hono/swagger-ui": "^0.5.1",
+    "better-auth": "^1.2.8",
+    "hono": "^4.7.10",
+    "knex": "^3.1.0",
+    "pg": "^8.13.3",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0",
+    "zod": "^3.25.28"
+  }
+}
