@@ -1,0 +1,18 @@
+{
+  "name": "App logs",
+  "kind": "log",
+  "connection": "__CONNECTION_ID__",
+  "from": {
+    "databaseName": "default",
+    "tableName": "app_logs"
+  },
+  "timestampValueExpression": "timestamp",
+  "severityTextExpression": "level",
+  "bodyExpression": "message",
+  "eventAttributesExpression": "{method, path, status, duration, request_id, err}",
+  "defaultTableSelectExpression": "timestamp, level, message, method, path, status, duration",
+  "serviceNameExpression": "boilerplate-app",
+  "highlightedRowAttributeExpressions": [],
+  "highlightedTraceAttributeExpressions": [],
+  "materializedViews": []
+}

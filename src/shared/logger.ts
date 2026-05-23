@@ -2,12 +2,11 @@ import process from 'node:process';
 
 import pino from 'pino';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const logFormat = process.env.LOG_FORMAT ?? (process.stdout.isTTY ? 'pretty' : 'json');
 
 export const logger = pino({
-  ...(isProduction
-    ? {}
-    : {
+  ...(logFormat === 'pretty'
+    ? {
         transport: {
           target: 'pino-pretty',
           options: {
@@ -15,5 +14,6 @@ export const logger = pino({
             translateTime: true,
           },
         },
-      }),
+      }
+    : {}),
 });

@@ -1,0 +1,42 @@
+[sources.docker]
+type = "docker_logs"
+include_containers = ["boilerplate-app"]
+
+[transforms.pino]
+type = "remap"
+inputs = ["docker"]
+source = '''
+  parsed = parse_json(.message) ?? {}
+
+  level_num = to_int(parsed.level) ?? 30
+  .level = if level_num >= 50 { "error" } else if level_num >= 40 { "warn" } else if level_num >= 30 { "info" } else if level_num >= 20 { "debug" } else { "trace" }
+
+  .message = to_string(parsed.msg) ?? .message
+  .request_id = to_string(parsed.requestId) ?? null
+  .method = to_string(parsed.method) ?? null
+  .path = to_string(parsed.path) ?? null
+  .status = to_int(parsed.status) ?? null
+  .duration = to_float(parsed.duration) ?? null
+  .err = to_string(parsed.err) ?? null
+'''
+
+[sinks.clickhouse]
+type = "clickhouse"
+inputs = ["pino"]
+endpoint = "http://clickstack:8123"
+database = "default"
+table = "app_logs"
+compression = "gzip"
+skip_unknown_fields = true
+
+[sinks.clickhouse.auth]
+strategy = "basic"
+user = "api"
+password = "api"
+
+[sinks.clickhouse.encoding]
+timestamp_format = "unix"
+
+[sinks.clickhouse.batch]
+max_events = 1000
+timeout_secs = 5

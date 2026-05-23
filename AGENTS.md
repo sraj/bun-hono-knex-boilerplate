@@ -13,7 +13,7 @@
 - Services accept repositories via constructor; composer instantiates both
 - Routes import service instances from `composer.ts` (not `Container.get()`)
 - Shared infra: `src/shared/database.ts` (Knex instance + pg pool), `src/shared/logger.ts` (Pino)
-- `src/config.ts`: Zod env var validation (DATABASE_URL required in production)
+- `src/shared/config.ts`: Zod env var validation (DATABASE_URL required in production)
 - `src/server.ts`: global middleware (request ID, request logger, secure headers, CORS, trailing slash)
 - `src/index.ts`: Bun serve + graceful shutdown (SIGTERM/SIGINT) + DB connection check at startup
 
@@ -53,6 +53,18 @@
 ## CI
 - `.github/workflows/ci.yml`: lint → build → migrate → test+coverage with PostgreSQL service container
 - Requires `DATABASE_URL` and `BETTER_AUTH_SECRET` env vars
+
+## Observability (docker-compose)
+- **ClickStack** (`clickhouse/clickstack-all-in-one`): bundles ClickHouse + HyperDX UI + OTel collector
+  - ClickHouse HTTP: `localhost:8123`, HyperDX UI: `localhost:8080`
+  - Persisted volumes: `clickstack-db`, `clickstack-ch-data`, `clickstack-ch-logs`
+- **clickhouse-init** (`curlimages/curl`): one-shot init container that creates `default.app_logs` table via SQL file
+- **Vector** (`timberio/vector:0.55.0-alpine`): reads Docker logs via socket → parses Pino JSON → sinks to ClickHouse
+  - Config at `vector/vector.toml`
+  - Mounts `/var/run/docker.sock:ro` for Docker log access
+  - Depends on `clickhouse-init` completing successfully (table exists)
+- **Log flow**: `boilerplate-app` container (Pino JSON stdout) → Docker daemon → Vector (`docker_logs` source) → VRL remap (level mapping, timestamp parsing) → ClickHouse sink (`default.app_logs` table)
+- **Table schema**: `clickhouse/init-table.sql` — MergeTree engine, TTL 30 days, ordered by `(toStartOfHour(timestamp), container_name)`
 
 ## Production Readiness Checklist (remaining)
 - [ ] Remove `disableCSRFCheck: true` + configure SameSite/CSRF for SPA

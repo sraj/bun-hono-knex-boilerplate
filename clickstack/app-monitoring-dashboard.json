@@ -1,0 +1,55 @@
+{
+  "name": "App Monitoring",
+  "tags": ["app"],
+  "tiles": [
+    {
+      "name": "Requests over time",
+      "x": 0, "y": 0, "w": 6, "h": 4,
+      "series": [{
+        "type": "time",
+        "dataSource": "events",
+        "aggFn": "count",
+        "where": "",
+        "groupBy": ["status"],
+        "field": "status"
+      }]
+    },
+    {
+      "name": "Avg duration (ms)",
+      "x": 6, "y": 0, "w": 6, "h": 4,
+      "series": [{
+        "type": "time",
+        "dataSource": "events",
+        "aggFn": "avg",
+        "where": "",
+        "groupBy": [],
+        "field": "duration"
+      }]
+    },
+    {
+      "name": "Level breakdown",
+      "x": 0, "y": 4, "w": 4, "h": 4,
+      "series": [{
+        "type": "time",
+        "dataSource": "events",
+        "aggFn": "count",
+        "where": "",
+        "groupBy": ["level"],
+        "field": "level"
+      }]
+    },
+    {
+      "name": "Recent logs",
+      "x": 4, "y": 4, "w": 8, "h": 4,
+      "series": [{
+        "type": "table",
+        "dataSource": "events",
+        "aggFn": "count",
+        "where": "",
+        "groupBy": [],
+        "field": "message",
+        "fields": ["timestamp","level","message","method","path","status","duration"]
+      }]
+    }
+  ]
+}

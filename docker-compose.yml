@@ -26,6 +26,74 @@ services:
       - clickstack-ch-data:/var/lib/clickhouse
       - clickstack-ch-logs:/var/log/clickhouse-server
 
+  clickhouse-init:
+    image: alpine:latest
+    container_name: boilerplate-ch-init
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache curl > /dev/null 2>&1
+        echo "Waiting for ClickStack..."
+        until curl -s http://clickstack:8123/ping > /dev/null 2>&1; do sleep 1; done
+        echo "Creating table app_logs..."
+        curl -s -u api:api -X POST "http://clickstack:8123/" --data-binary @/init.sql
+        echo "Table created successfully"
+    volumes:
+      - ./clickstack/clickhouse/init-table.sql:/init.sql
+    depends_on:
+      clickstack:
+        condition: service_started
+
+  app:
+    build: .
+    image: bun-hono-knex-boilerplate:latest
+    container_name: boilerplate-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/boilerplate_db
+      API_PORT: "3000"
+      LOG_FORMAT: json
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+    command: ["bun", "run", "dev"]
+    depends_on:
+      postgres:
+        condition: service_started
+
+  vector:
+    image: timberio/vector:0.55.0-debian
+    container_name: boilerplate-vector
+    restart: unless-stopped
+    command: ["--config", "/etc/vector/vector.toml"]
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      clickhouse-init:
+        condition: service_completed_successfully
+
+  clickstack-provision:
+    image: alpine:latest
+    container_name: boilerplate-cs-provision
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache curl jq mongodb-tools > /dev/null 2>&1
+        exec /provision.sh
+    environment:
+      HYPERDX_ACCESS_KEY: ${HYPERDX_ACCESS_KEY:?error}
+    volumes:
+      - ./clickstack/provision.sh:/provision.sh
+      - ./clickstack/app-logs-source.json:/app-logs-source.json
+      - ./clickstack/app-monitoring-dashboard.json:/app-monitoring-dashboard.json
+    depends_on:
+      clickstack:
+        condition: service_started
+
 volumes:
   postgres-data:
   clickstack-db:

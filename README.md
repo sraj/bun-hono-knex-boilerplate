@@ -267,6 +267,73 @@ Automated via GitHub Actions (`.github/workflows/ci.yml`):
 
 Runs on every push/PR to `main` with a PostgreSQL service container.
 
+## Observability (docker-compose)
+
+The stack ships application logs from the `boilerplate-app` container into ClickHouse via Vector.dev, with a HyperDX UI for exploration.
+
+### Services
+
+| Service | Image | Purpose |
+|---------|-------|---------|
+| `clickstack` | `clickhouse/clickstack-all-in-one` | ClickHouse database + HyperDX UI + OTel collector |
+| `clickhouse-init` | `curlimages/curl` | One-shot init — creates `default.app_logs` table on startup |
+| `vector` | `timberio/vector:0.55.0-alpine` | Reads Docker logs, parses Pino JSON, sinks to ClickHouse |
+
+### Log flow
+
+```
+boilerplate-app (Pino JSON → stdout)
+  → Docker daemon
+  → Vector (docker_logs source)
+  → VRL remap (level conversion, timestamp parsing)
+  → ClickHouse sink (default.app_logs table)
+```
+
+### Usage
+
+```bash
+# Start all services (Postgres + ClickStack + Vector)
+docker compose up -d
+
+# Vector depends on clickhouse-init, which waits for ClickStack
+# and creates the app_logs table automatically
+
+# View logs in HyperDX UI
+open http://localhost:8080
+
+# (First visit: create a HyperDX user account)
+```
+
+### Vector config
+
+`vector/vector.toml` defines:
+
+- **Source**: `docker_logs` — reads logs from the `boilerplate-app` container via Docker socket (`/var/run/docker.sock`)
+- **Transform**: remap — converts Pino numeric levels (`30`→`info`, `40`→`warn`, etc.) and extracts structured fields (`method`, `path`, `status`, `duration`, `request_id`)
+- **Sink**: `clickhouse` — writes to `http://clickstack:8123`, table `default.app_logs`, gzip compressed, batches of 1000 events
+
+### Table schema
+
+```sql
+CREATE TABLE default.app_logs (
+    timestamp       DateTime64(3) NOT NULL,
+    level           LowCardinality(String) NOT NULL,
+    message         String NOT NULL,
+    request_id      Nullable(String),
+    method          Nullable(String),
+    path            Nullable(String),
+    status          Nullable(Int64),
+    duration        Nullable(Float64),
+    err             Nullable(String),
+    container_name  String NOT NULL,
+    stream          String NOT NULL
+) ENGINE = MergeTree()
+ORDER BY (toStartOfHour(timestamp), container_name)
+TTL toDateTime(timestamp) + INTERVAL 30 DAY
+```
+
+Defined in `clickhouse/init-table.sql` — auto-created on `docker compose up`.
+
 ## License
 
 MIT
