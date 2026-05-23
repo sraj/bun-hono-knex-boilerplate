@@ -1,8 +1,8 @@
 import pg from 'pg';
 
-import { config } from './config';
 import { db } from '../infra/db/knex';
 
+import { config } from './config';
 import { logger } from './logger';
 
 const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
