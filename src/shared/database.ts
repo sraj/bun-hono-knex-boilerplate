@@ -1,13 +1,13 @@
 import pg from 'pg';
 
-import { config } from '../shared/config';
+import { config } from './config';
 import { db } from '../infra/db/knex';
 
 import { logger } from './logger';
 
 const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
 
-pool.on('error', (err) => {
+pool.on('error', (err: Error) => {
   logger.error({ err }, 'Unexpected database pool error');
 });
 
