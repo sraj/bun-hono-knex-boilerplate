@@ -65,7 +65,7 @@ services:
         condition: service_started
 
   vector:
-    image: timberio/vector:0.55.0-debian
+    image: timberio/vector:0.55.0-alpine
     container_name: boilerplate-vector
     restart: unless-stopped
     command: ["--config", "/etc/vector/vector.toml"]
