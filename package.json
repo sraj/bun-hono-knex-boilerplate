@@ -19,7 +19,17 @@
     "ci": "biome ci ./src ./scripts ./tests && eslint ./src ./scripts ./tests",
     "openapi": "bun ./scripts/generate-openapi.ts",
     "test": "bun test ./src ./tests",
-    "test:coverage": "bun test ./src ./tests --coverage"
+    "test:coverage": "bun test ./src ./tests --coverage",
+    "prepare": "simple-git-hooks",
+    "lint-staged": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,cjs,mjs}": [
+      "biome check --write --staged"
+    ]
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
@@ -32,6 +42,8 @@
     "@typescript-eslint/parser": "^8.59.4",
     "eslint": "^10.4.0",
     "eslint-plugin-import-x": "^4.16.2",
+    "lint-staged": "^17.0.5",
+    "simple-git-hooks": "^2.13.1",
     "swagger-jsdoc": "^6.2.8",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.59.4"
